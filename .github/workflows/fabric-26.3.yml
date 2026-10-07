@@ -1,0 +1,56 @@
+name: Fabric 26.3
+
+on:
+  push:
+    branches: [ "26.3" ]
+  pull_request:
+    branches: [ "26.3" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: gradle
+
+      - name: Make Gradle executable
+        run: chmod +x gradlew
+
+      - name: Verify Gradle
+        run: ./gradlew --version
+
+      - name: Build Fabric mod
+        run: ./gradlew :Fabric:build --stacktrace --warning-mode all
+
+      - name: Validate Fabric metadata and jar
+        shell: bash
+        run: |
+          set -euo pipefail
+          JAR="$(find Fabric/build/libs -maxdepth 1 -type f -name 'YungsApi-26.3-Fabric-*.jar' ! -name '*-sources.jar' ! -name '*-javadoc.jar' | head -n 1)"
+          test -n "$JAR"
+          echo "Production jar: $JAR"
+          jar tf "$JAR" | grep -Fx 'fabric.mod.json'
+          jar tf "$JAR" | grep -Fx 'yungsapi.mixins.json'
+          jar tf "$JAR" | grep -Fx 'yungsapi_fabric.mixins.json'
+          jar tf "$JAR" | grep -Fx 'pack.mcmeta'
+
+      - name: Upload Fabric jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: YungsApi-26.3-Fabric
+          path: |
+            Fabric/build/libs/YungsApi-26.3-Fabric-*.jar
+            !Fabric/build/libs/*-sources.jar
+            !Fabric/build/libs/*-javadoc.jar
+          if-no-files-found: error
