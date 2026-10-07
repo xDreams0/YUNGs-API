@@ -1,7 +1,5 @@
 plugins {
     id 'java-library'
-    id 'signing'
-    id 'maven-publish'
 }
 
 base {
@@ -19,7 +17,6 @@ java {
 
 repositories {
     mavenCentral()
-    // https://docs.gradle.org/current/userguide/declaring_repositories.html#declaring_content_exclusively_found_in_one_repository
     exclusiveContent {
         forRepository {
             maven {
@@ -66,15 +63,11 @@ jar {
 processResources {
     def expandProps = [
             "version": version,
-            "group": project.group, //Else we target the task's group.
+            "group": project.group,
             "mc_version": mc_version,
-            "mc_version_range": mc_version_range,
             "mc_version_range_fabric": mc_version_range_fabric,
             "fabric_version": fabric_version,
             "fabric_loader_version": fabric_loader_version,
-            "neoforge_version": neoforge_version,
-            "neoforge_version_range": neoforge_version_range,
-            "neoforge_loader_version_range": neoforge_loader_version_range,
             "mod_full_name": mod_full_name,
             "mod_author": mod_author,
             "mod_id": mod_id,
@@ -84,12 +77,8 @@ processResources {
             "java_version": java_version
     ]
 
-    var jsonExpandProps = expandProps.collectEntries {
+    def jsonExpandProps = expandProps.collectEntries {
         key, value -> [(key): value instanceof String ? value.replace("\n", "\\\\n") : value]
-    }
-
-    filesMatching(['META-INF/mods.toml', 'META-INF/neoforge.mods.toml']) {
-        expand expandProps
     }
 
     filesMatching(['pack.mcmeta', 'fabric.mod.json', '*.mixins.json']) {
@@ -97,51 +86,4 @@ processResources {
     }
 
     inputs.properties(expandProps)
-}
-
-publishing {
-    publications {
-        register('mavenJava', MavenPublication) {
-            artifactId mod_name
-            from components.java
-            pom {
-                name = "YUNG's API"
-                description = "A common API for YUNG's Minecraft mods"
-                url = 'https://github.com/yungnickyoung/YUNGs-Api'
-                scm {
-                    url = 'https://github.com/yungnickyoung/YUNGs-Api'
-                    connection = 'scm:git:git://github.com/yungnickyoung/YUNGs-Api.git'
-                    developerConnection = 'scm:git:ssh://git@github.com:yungnickyoung/YUNGs-Api.git'
-                }
-                licenses {
-                    license {
-                        name = 'GNU LGPLv3'
-                        url = 'https://github.com/yungnickyoung/YUNGs-Api/blob/forge/1.18/LICENSE'
-                        distribution = 'repo'
-                    }
-                }
-                developers {
-                    developer {
-                        name = 'YUNGNICKYOUNG'
-                        email = 'yungnickyoung@gmail.com'
-                    }
-                }
-            }
-        }
-    }
-    repositories {
-        maven {
-            url = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-            credentials {
-                username ossrhToken
-                password ossrhTokenPassword
-            }
-        }
-    }
-}
-
-// signing.keyId, signing.password, and signing.secretKeyRingFile are defined separately
-// in my global gradle.properties for protection
-signing {
-    sign publishing.publications
 }
