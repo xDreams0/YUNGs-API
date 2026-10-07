@@ -2,10 +2,6 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         mavenCentral()
-        maven {
-            name = 'NeoForged'
-            url = uri('https://maven.neoforged.net/releases')
-        }
         exclusiveContent {
             forRepository {
                 maven {
@@ -25,6 +21,4 @@ plugins {
 }
 
 rootProject.name = 'yungsapi'
-// This 26.3 branch targets Fabric. NeoForge sources remain in the repository but
-// are intentionally excluded from the build so they cannot block the Fabric port.
 include("Common", "Fabric")
