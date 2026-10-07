@@ -1,8 +1,5 @@
 plugins {
-    // Minecraft 26.3 requires Fabric Loom 1.17 / Gradle 9.6.
     id 'net.fabricmc.fabric-loom' version '1.17.21' apply false
-    // Common sources are still provided by NeoForm; NeoForge itself is not built on this branch.
-    id 'net.neoforged.moddev' version '2.0.148' apply false
     id 'net.darkhax.curseforgegradle' version "${cursegradle_version}" apply false
     id "com.modrinth.minotaur" version "2.+" apply false
 }
@@ -14,6 +11,7 @@ subprojects {
             cacheDynamicVersionsFor 60, 'seconds'
         }
     }
+
     ext {
         rawVersion = project.version
     }
