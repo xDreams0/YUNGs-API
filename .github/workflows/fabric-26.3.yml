@@ -30,8 +30,18 @@ jobs:
       - name: Verify Gradle
         run: ./gradlew --version
 
+      - name: Resolve unique fork version
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_VERSION="$(sed -n 's/^version=//p' gradle.properties | head -n 1)"
+          test -n "$BASE_VERSION"
+          FORK_VERSION="${BASE_VERSION}+xdreams.${GITHUB_SHA:0:8}"
+          echo "FORK_VERSION=$FORK_VERSION" >> "$GITHUB_ENV"
+          echo "Build version: $FORK_VERSION"
+
       - name: Build Fabric mod
-        run: ./gradlew :Fabric:build --stacktrace --warning-mode all
+        run: ./gradlew -Pversion="${FORK_VERSION}" :Fabric:build --stacktrace --warning-mode all
 
       - name: Validate Fabric metadata and jar
         shell: bash
@@ -40,6 +50,18 @@ jobs:
           JAR="$(find Fabric/build/libs -maxdepth 1 -type f -name 'YungsApi-26.3-Fabric-*.jar' ! -name '*-sources.jar' ! -name '*-javadoc.jar' | head -n 1)"
           test -n "$JAR"
           echo "Production jar: $JAR"
+          FORK_VERSION="$FORK_VERSION" JAR="$JAR" python3 - <<'PY'
+          import json
+          import os
+          import zipfile
+          jar = os.environ["JAR"]
+          with zipfile.ZipFile(jar) as zf:
+              meta = json.loads(zf.read("fabric.mod.json"))
+          expected = "26.3-Fabric-" + os.environ["FORK_VERSION"]
+          assert meta["version"] == expected, (meta["version"], expected)
+          assert os.environ["FORK_VERSION"] in jar, jar
+          print("Validated unique fork version:", expected)
+          PY
           jar tf "$JAR" | grep -Fx 'fabric.mod.json'
           jar tf "$JAR" | grep -Fx 'yungsapi.mixins.json'
           jar tf "$JAR" | grep -Fx 'yungsapi_fabric.mixins.json'
